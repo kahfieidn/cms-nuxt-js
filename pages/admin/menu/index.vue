@@ -1,0 +1,168 @@
+<template>
+
+  <div class="content-wrapper mb-5">
+    <section class="content-header">
+      <div class="container-fluid">
+      </div>
+    </section>
+
+    <section class="content">
+      <div class="card card-outline card-info">
+        <div class="card-header">
+          <h3 class="card-title"><i class="nav-icon fas fa-clone"></i> MENUS</h3>
+          <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+              <i class="fas fa-minus"></i>
+            </button>
+            <button type="button" class="btn btn-tool" data-card-widget="remove" title="Remove">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <div class="input-group mb-3">
+              <div class="input-group-prepend">
+                <nuxt-link :to="{name: 'admin-menu-create'}" class="btn btn-info btn-sm" style="padding-top: 8px;"><i
+                    class="fa fa-plus-circle"></i> TAMBAH</nuxt-link>
+              </div>
+              <input type="text" class="form-control" v-model="search" @keypress.enter="searchData" placeholder="cari berdasarkan nama menu">
+              <div class="input-group-append">
+                <button @click="searchData" class="btn btn-info"><i class="fa fa-search"></i>
+                  CARI
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- table -->
+          <b-table striped bordered hover :items="menus" :fields="fields" show-empty>
+            <template v-slot:cell(actions)="row">
+                <b-button variant="warning" size="sm" :to="{name: 'admin-menu-edit-id', params: {id:row.item.id}}">EDIT</b-button>
+                <b-button variant="danger" size="sm" @click="deleteMenu(row.item.id)">DELETE</b-button>
+            </template>
+          </b-table>
+
+          <!-- pagination -->
+          <b-pagination v-model="pagination.current_page" :total-rows="pagination.total" :per-page="pagination.per_page"
+            @change="changePage" align="right" class="mt-3"></b-pagination>
+
+        </div>
+      </div>
+    </section>
+
+  </div>
+</template>
+
+<script>
+  export default {
+    //layout
+    layout: 'admin',
+
+    //meta
+    head() {
+      return {
+        title: 'Menus - MasKahfi.com - Belajar Sampai Pintar',
+      }
+    },
+
+    //data function
+    data() {
+      return {
+        
+        //table header
+        fields: [{
+            label: 'Nama Menu',
+            key: 'name'
+          },
+          {
+            label: 'URL',
+            key: 'url',
+          },
+          {
+            label: 'Actions',
+            key: 'actions',
+            tdClass: 'text-center'
+          }
+        ],
+
+        search: ''
+      }
+    },
+
+    //watch query URL
+    watchQuery: ["q", "page"],
+
+    async asyncData({ $axios, query }) {
+
+      //page
+      let page = query.page ? parseInt(query.page) : ''  
+
+      let search = query.q ? query.q : ''
+
+      //fetching menus
+      const menus = await $axios.$get(`/api/admin/menus?q=${search}&page=${page}`)
+
+      return {
+        'menus': menus.data.data,
+        'pagination': menus.data
+      }
+    },
+
+    methods: {
+
+      //change page pagination
+      changePage(page) {
+        this.$router.push({
+          path: this.$route.path,
+          query: {
+            q: this.$route.query.q,
+            page: page
+          }
+        });
+      },
+
+      searchData() {
+        this.$router.push({
+            path: this.$route.path,
+            query: {
+                q: this.search
+            }
+        });
+      },
+
+      deleteMenu(id) {
+        this.$swal.fire({
+            title: 'Apakah kamu yakin?',
+            text: "INGIN MENGHAPUS DATA INI !",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '3085d6',
+            confirmButtonText: 'Ya, HAPUS!',
+            cancelButtonText: 'Tidak',
+        }).then((result) => {
+            if(result.isConfirmed) {
+                this.$axios.delete(`/api/admin/menus/${id}`)
+                .then(() => {
+                    this.$nuxt.refresh()
+
+                    this.$swal.fire({
+                        title: 'Berhasil!',
+                        text: 'DATA BERHASIL DIHAPUS !',
+                        icon: 'success',
+                        showConfirmButton: false,
+                        timer: 2000
+                    })
+                })
+            }
+        })
+      }
+    }
+
+  }
+</script>
+
+<style>
+
+</style>
